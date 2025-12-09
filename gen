@@ -1,0 +1,42 @@
+# pip install primer3-py pandas itertools
+import primer3
+import pandas as pd
+from itertools import product
+
+# Parameters
+min_len = 4
+max_len = 8  # practical for combinatorial generation
+nucleotides = ['A', 'T', 'G', 'C']
+
+def generate_all_primers(min_len, max_len):
+    """Generate all sequences from min_len to max_len."""
+    primers = []
+    for length in range(min_len, max_len+1):
+        for seq_tuple in product(nucleotides, repeat=length):
+            primers.append("".join(seq_tuple))
+    return primers
+
+def calc_thermo(primer):
+    """Calculate Tm, GC%, hairpin and homodimer delta G."""
+    hairpin = primer3.calcHairpin(primer)
+    dimer = primer3.calcHomodimer(primer)
+    return {
+        "sequence": primer,
+        "length": len(primer),
+        "tm": primer3.calcTm(primer),
+        "GC%": primer3.calcGC(primer),
+        "deltaG_hairpin": hairpin.dg,
+        "deltaG_homodimer": dimer.dg
+    }
+
+# Generate primers
+primers = generate_all_primers(min_len, max_len)
+print(f"Generated {len(primers)} primers.")
+
+# Compute thermodynamics
+thermo_data = [calc_thermo(p) for p in primers]
+
+# Convert to DataFrame
+df_primers = pd.DataFrame(thermo_data)
+df_primers.to_csv("all_possible_primers.csv", index=False)
+print("Saved primer thermodynamics to all_possible_primers.csv")
